@@ -5,10 +5,16 @@ Belle Lume website - A Swedish digital marketing agency specializing in performa
 
 ## Deployment
 - Hosted on GitHub Pages with custom domain: bellelume.se
-- Repository: https://github.com/renco-og/bellelume-website
-- Branch: master
-- After pushing, verify GitHub Pages has rebuilt by checking build timestamps vs commit timestamps
-- To manually trigger a rebuild: `gh api -X POST repos/renco-og/bellelume-website/pages/builds`
+- Repository: https://github.com/21Draw-com/bellelume-website (the repo keeps this name for now; a rename dropped the site's custom domain on 2026-11-23, so infra renames it only once that is proven safe)
+- Branch: master. GitHub Pages serves from `master`, so **a push to master is live**
+- After a merge, verify GitHub Pages has rebuilt by checking build timestamps vs commit timestamps
+- To manually trigger a rebuild: `gh api -X POST repos/21Draw-com/bellelume-website/pages/builds`
+
+## Builder account and workflow
+- The builder runs in its own macOS account `website-bellelume`, in `~/Projects/website-bellelume`
+- Identity: the GitHub App `website-bellelume-builder` (21Draw-com, this repo only), not renco-og
+- **Branches and PRs only; never push to master** (that publishes the site). infra merges
+- State lives in this repo, its issues (see the "Status: bellelume builder" issue) and this file
 
 ## File Structure
 - `index.html` - Main HTML file
