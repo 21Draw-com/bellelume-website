@@ -30,6 +30,15 @@
    "next": "PR #17 waits for infra's review and merge; after the restart check that the four skills load",
    "waits_on": [],
    "notes": []
+  },
+  "21Draw-com/bellelume-website#18": {
+   "from_renco": false,
+   "state": "open",
+   "next": "PR open, tier risky: waits for infra's merge, then infra restarts this builder",
+   "waits_on": [],
+   "notes": [
+    "2026-11-24 18:01 kit 1.0.0 from the channel folder builder-kit-1.0.0; service skills knowledge and release left out (not a service repo); docs/work-ledger.json kept (data, installed once)"
+   ]
   }
  },
  "archive": {
