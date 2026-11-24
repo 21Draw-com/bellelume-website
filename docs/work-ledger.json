@@ -4,7 +4,7 @@
   "21Draw-com/bellelume-website#2": {
    "from_renco": false,
    "state": "open",
-   "next": "after a restart: first SendMessage to infra-control 'resume: <what you work on now>' (infra-control#174); then keep this status issue current and report each PR to infra-control",
+   "next": "keep this status issue current; report each PR to infra-control; start nothing new from the backlog until infra says so (priority-wait, Renco 2026-11-24)",
    "waits_on": [],
    "notes": [
     "2026-11-24 16:37 Saved before a clean-context restart (infra-control#174). Open work: PR #4 (issue #3) and PR #6 (issue #5), both conflicting with master, both waiting for a rebase by me and then a merge by infra."
@@ -13,14 +13,21 @@
   "21Draw-com/bellelume-website#3": {
    "from_renco": false,
    "state": "open",
-   "next": "FIRST after restart: rebase PR #4 on master (conflict in CLAUDE.md since #8/#10 merged), push, tell infra-control",
+   "next": "PR #4 rebased on master 7f0092a (a5016d0): waits for infra's review and merge",
    "waits_on": [],
    "notes": []
   },
   "21Draw-com/bellelume-website#5": {
    "from_renco": false,
    "state": "open",
-   "next": "after #3: rebase PR #6 on master (conflict in CLAUDE.md), push, tell infra-control",
+   "next": "PR #6 rebased (04c66d0): waits for infra: merge, or close because the job-sessions section replaces it (see PR comment)",
+   "waits_on": [],
+   "notes": []
+  },
+  "21Draw-com/bellelume-website#16": {
+   "from_renco": false,
+   "state": "open",
+   "next": "PR #17 waits for infra's review and merge; after the restart check that the four skills load",
    "waits_on": [],
    "notes": []
   }
