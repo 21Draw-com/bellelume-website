@@ -1,0 +1,10 @@
+# builder-kit 1.0.0 skeleton: install it once with renco-og filled in, then add this repository's own
+# safety-critical paths below (CLAUDE.md lists them). The four lines here stay.
+# ADVISORY until code-owner review is switched on for this repository: GitHub does not enforce it yet, so a change
+# to these paths still waits for the owner's verified yes in the pull request (infra checks it before merging).
+/CLAUDE.md      @renco-og
+/.claude/       @renco-og
+/.github/       @renco-og
+/scripts/       @renco-og
+# This repository's own paths:
+/CNAME          @renco-og

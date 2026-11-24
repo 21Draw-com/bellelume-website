@@ -1,6 +1,7 @@
 #!/bin/bash
+# builder-kit 1.0.0: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
 # Builder ledger: this repository's own work as a dependency tree that survives any restart (infra-control#149).
-# Single source: templates/builder-kit/scripts/ledger.sh in agent-architecture-templates. Same file in every builder repo.
+# A kit file infra ships; the same file in every builder repo.
 # Two layers, no second source of truth:
 #   facts  ~/.cache/builder-ledger/<owner>__<repo>.json  open issues + PRs + blocked_by (with the live state of every
 #          external blocker), one GraphQL query, rebuilt from GitHub at each trigger, never in git
