@@ -1,0 +1,14 @@
+# The kit contract as a CI step (builder kit README, Rollout step 3): every kit file equals the shipped version.
+name: kit-check
+on:
+  pull_request:
+  push:
+    branches: [master]
+permissions:
+  contents: read
+jobs:
+  kit-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: scripts/kit-check.sh
