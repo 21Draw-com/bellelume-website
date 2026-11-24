@@ -3,8 +3,8 @@
     "allow": [
       "Bash(scripts/ledger.sh:*)",
       "Bash(./scripts/ledger.sh:*)",
-      "Bash(scripts/job-session.sh:*)",
-      "Bash(./scripts/job-session.sh:*)"
+      "Bash(scripts/job-session.sh list)",
+      "Bash(./scripts/job-session.sh list)"
     ]
   },
   "hooks": {
