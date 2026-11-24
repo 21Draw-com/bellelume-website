@@ -1,4 +1,4 @@
-<!-- builder-kit 1.0.0: a kit file. Never edit it here; a change goes to infra (status issue), infra ships a new kit version. -->
+<!-- builder-kit 1.0.2: a kit file. Never edit it here; a change goes to infra (status issue), infra ships a new kit version. -->
 # Rules every builder shares
 
 Imported by this repository's `CLAUDE.md` (`@.claude/builder-rules.md`). `CLAUDE.md` holds only what is particular to
@@ -75,14 +75,14 @@ Every issue and PR names its tier (the planner's `Profile:` line sets the model;
 
 **Your team:** `.claude/agents/reviewer.md` (the change against its plan) and `.claude/agents/security.md` (secrets,
 reach, who gets in, privileges, what is loaded, workflows). Both are read-only; you decide and you fix. Agent-workers
-are never your in-session helpers (rule 17: started visibly, see `CLAUDE.md`).
+are never your in-session helpers (they are started visibly, as your `CLAUDE.md` says).
 
 ## Every pull request
 - Uses `.github/pull_request_template.md`: the tier, the checks, **"For infra after the merge"** (what infra must
   run, restart, roll out or verify live; "nothing" if nothing) and **"Learnings for all agents?"** ("no", or one line
   per learning: the PR is the record, your context is gone afterwards).
 - **A structural decision** (architecture, a new dependency or service, a rule from the owner, a reversed choice) gets
-  an entry in `docs/DECISIONS.md` in the same PR: date, decision, why, who decided, link.
+  an entry in your decisions log (the file your `CLAUDE.md` names) in the same PR: date, decision, why, who decided, link.
 - The inventories in `CLAUDE.md` and the README ("Timed behaviour", "What runs") change in the same PR as the code.
 
 ## Finish message
@@ -92,12 +92,17 @@ secrets; information, not a request. A job session also comments its PR link on 
 
 ## Keep the context small
 `CLAUDE.md` stays **under 12 KB** (`scripts/kit-check.sh` warns): rules and a map only. Procedures go into skills,
-reference into `docs/`, history into issues and `docs/DECISIONS.md`. Never paste a kit file into `CLAUDE.md`.
+reference into `docs/`, history into issues and your decisions log. Never paste a kit file into `CLAUDE.md`.
 
 ## Safety nets you carry
 - **Autosave:** the Stop hook `.claude/hooks/autosave.sh` stores uncommitted work of a work branch as a snapshot ref
   `refs/autosave/<branch>` and pushes that ref; it never commits on a branch and never touches the default branch.
+  It saves only tracked and staged files: **an untracked file is never saved** (`git add` it to keep it), so a scratch
+  export never reaches GitHub. `job-session.sh close` deletes the ref once its branch is gone.
   Restore: `git checkout refs/autosave/<branch> -- <file>`.
+- **Job sessions start only on a trusted issue:** `job-session.sh start` refuses an issue whose author or last editor
+  is neither your App nor an owner on the `/scripts/` line of `.github/CODEOWNERS`. Refused: open it yourself (your
+  own issue, in your words) or ask the owner; never edit it to get past the check.
 - **Kit contract:** `scripts/kit-check.sh` compares every kit file with `.github/kit.sha256`; run it in CI and before
   every PR. A red check means a kit file was edited: put it back, and propose the change to infra.
 - **CODEOWNERS** names `.claude/`, `.github/`, `scripts/` and `CLAUDE.md`. Code-owner review is not enforced yet, so it

@@ -1,10 +1,11 @@
 #!/bin/bash
-# builder-kit 1.0.0: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
+# builder-kit 1.0.2: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
 # Visible job sessions for a builder (#147, pattern of #144). Run by the MAIN builder session in its own account; no root.
 # One independent issue = one tmux session + Claude Remote session "<repo>-<N> <short issue title>" in its own git worktree,
 # closed after its PR. A kit file infra ships; the same file in every builder repo.
 #   scripts/job-session.sh start <N> [--dry-run]   worktree ../<repo>-wt/<N> on fresh default branch, session <repo>-<N>
-#   scripts/job-session.sh close <N> [--dry-run]   end the session, remove the worktree only when clean (no force)
+#   scripts/job-session.sh close <N> [--dry-run]   end the session, remove the worktree only when clean (no force),
+#                                                  delete the autosave refs of branches that are gone
 #   scripts/job-session.sh list                    running job sessions of this repo
 # Every subcommand checks its exact argument count; --dry-run (start and close) only prints and never acts; anything else exits 2 (#166).
 # Model and effort come from the issue's line `Profile: <model> <effort>` (model sonnet|opus|fable|haiku, effort low|medium|high|xhigh|max;
@@ -14,6 +15,13 @@
 # Branch name and repo slug are checked against a strict pattern before they go into any command string; N has no leading zeros (#169).
 # The default branch is read from the repo (origin/HEAD, else gh), never assumed to be main (#155).
 # Checks (same as infra-helper builder): clean main clone, fast-forward to GitHub's default branch, one session per N, at most 3.
+# Who wrote the issue (kit 1.0.2): start runs only an issue whose AUTHOR and LAST EDITOR of the body (GitHub's `editor`)
+# are both trusted: the main builder's App (this clone's `git config user.name`, `<app>[bot]`) or an owner on the
+# `/scripts/` line of .github/CODEOWNERS. Anyone else (another bot, a shared or outside account) -> refused, exit 2.
+# Unreadable: a real start stops; a dry run says "unknown". A GitHub App's login is compared as `<slug>[bot]`.
+# Autosave refs: close deletes refs/autosave/<b> locally and on origin when branch <b> is gone: no local branch and
+# not on origin, or its upstream was origin/<b> and origin no longer has it (merged and deleted). A branch that was
+# never pushed, or that is checked out in any worktree, keeps its snapshot. One bounded ls-remote; nothing else on the network.
 set -euo pipefail
 export PATH="$HOME/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 T=tmux; MAX=3
@@ -28,6 +36,16 @@ base="$(dirname "$main")/$repo-wt"
 with_timeout() { local s="$1" p w rc=0; shift; "$@" & p=$!; { sleep "$s"; pkill -P "$p" || true; kill "$p" || true; } >/dev/null 2>&1 & w=$!
   wait "$p" 2>/dev/null || rc=$?; pkill -P "$w" >/dev/null 2>&1 || true; kill "$w" >/dev/null 2>&1 || true; wait "$w" 2>/dev/null || true; return "$rc"; }
 gh_t() { with_timeout "${JOB_GH_TIMEOUT:-20}" gh "$@"; }
+trusted() { local me; me="$(git -C "$main" config user.name)" || true
+  [[ "$me" =~ ^[A-Za-z0-9-]+\[bot\]$ ]] && echo "$me"
+  sed -nE 's#^/scripts/[[:space:]]+##p' "$main/.github/CODEOWNERS" 2>/dev/null | tr ' \t' '\n\n' | sed -nE 's#^@([A-Za-z0-9-]+)$#\1#p'; }
+# "<author> <editor or ->" of issue n, Apps as <slug>[bot]
+writers() { gh_t api graphql -F n="$1" -f o="${slug%/*}" -f r="${slug#*/}" -f query='query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){issue(number:$n){author{__typename login} editor{__typename login}}}}' \
+  --jq '.data.repository.issue | [.author, .editor] | map(if . == null then "-" elif .__typename == "Bot" then .login + "[bot]" else .login end) | join(" ")'; }
+# untrusted <author> <editor>: prints why, empty when both are trusted (an editor "-" means never edited)
+untrusted() { local t; t="$(trusted)"; [ -n "$1" ] && [ "$1" != - ] || { echo "no author"; return; }
+  grep -qixF -- "$1" <<<"$t" || echo "author $1 is not the builder's App or an owner"   # logins: case-insensitive
+  [ "$2" = - ] || grep -qixF -- "$2" <<<"$t" || echo "last editor $2 is not the builder's App or an owner"; }
 running() { "$T" list-sessions -F '#{session_name}' 2>/dev/null | grep -E "^$repo-[0-9]+$" || true; }
 profile() { local l; l="$(printf '%s\n' "$1" | grep -iEm1 '^[[:space:]>*-]*profile:[[:space:]]*(sonnet|opus|fable|haiku)[[:space:]]+(low|medium|high|xhigh|max)[[:space:]]*$' | tr 'A-Z' 'a-z' | sed -E 's/^[^a-z]*profile:[[:space:]]*//')" || true
   echo "${l:-sonnet medium}"; }
@@ -52,12 +70,15 @@ start)
   rawtitle="$(gh_t issue view "$n" -R "$slug" --json title --jq .title 2>/dev/null)" || rawtitle=""
   body="$(gh_t issue view "$n" -R "$slug" --json body --jq .body 2>/dev/null)" || body=""
   if [ -z "$dry" ]; then [ -n "$rawtitle" ] && [ -n "$body" ] || die "cannot read title and body of $slug#$n: not starting"; fi
+  w="$(writers "$n" 2>/dev/null)" || w=""
+  if [ -z "$w" ]; then [ -n "$dry" ] && w="unknown" || die "cannot read author and editor of $slug#$n: not starting"
+  else read -r wa we _ <<<"$w"; why="$(untrusted "$wa" "${we:--}")"; [ -z "$why" ] || die "$slug#$n: $why: not starting (open it yourself or ask the owner)"; fi
   set -- $(profile "$body"); model="$1"; effort="$2"
   title="$(printf '%s' "$rawtitle" | sed -E 's/^(\[[^]]*\] *)+//' | tr -cd 'A-Za-z0-9 .,-' | cut -c1-40)"
   [ -n "$title" ] || { [ -n "$dry" ] && title="issue $n" || die "issue $n has no usable title: not starting"; }
   name="$sess $title"
   prompt="Your first line: the link https://github.com/$slug/issues/$n . Build GitHub issue $slug#$n exactly as written (read it with gh), on a branch, open ONE pull request and stop. Never push to $br, never merge, touch only the files the issue names. End by commenting the PR link on issue #$n so the main builder sees it. Last step: SendMessage to infra-control: PR link ready for review (or: stopped, with the reason)."
-  if [ "$dry" = --dry-run ]; then echo "would: ff $main to origin/$br; git worktree add --detach $wt; tmux new-session -d -s $sess -c $wt claude --model $model --effort $effort --name '$name' --remote-control '$name'"; exit 0; fi
+  if [ "$dry" = --dry-run ]; then echo "issue writers: $w"; echo "would: ff $main to origin/$br; git worktree add --detach $wt; tmux new-session -d -s $sess -c $wt claude --model $model --effort $effort --name '$name' --remote-control '$name'"; exit 0; fi
   gt() { with_timeout "${JOB_GIT_TIMEOUT:-60}" git "$@"; }
   git -C "$main" switch -q "$br" && gt -C "$main" fetch -q origin "$br" && git -C "$main" merge -q --ff-only FETCH_HEAD || die "cannot fast-forward $main"
   remote="$(gt -C "$main" ls-remote origin "refs/heads/$br")" || die "cannot reach origin"
@@ -68,8 +89,25 @@ start)
 close)
   argc $# 1 2; num "${1:-}"; n="$1"; dry="${2:-}"; sess="$repo-$n"; wt="$base/$n"
   [ -z "$dry" ] || [ "$dry" = --dry-run ] || usage
-  if [ "$dry" = --dry-run ]; then echo "would: tmux kill-session -t =$sess; git worktree remove $wt (only when clean, no force)"; exit 0; fi
+  if [ "$dry" = --dry-run ]; then echo "would: tmux kill-session -t =$sess; git worktree remove $wt (only when clean, no force); delete refs/autosave/<b> of branches that are gone"; exit 0; fi
   "$T" kill-session -t "=$sess" 2>/dev/null && echo "closed $sess" || echo "no $sess session"
-  [ ! -d "$wt" ] || { git -C "$main" worktree remove "$wt" 2>/dev/null && echo "removed worktree $wt" || echo "worktree $wt kept (not clean): look first"; } ;;
+  [ ! -d "$wt" ] || { git -C "$main" worktree remove "$wt" 2>/dev/null && echo "removed worktree $wt" || echo "worktree $wt kept (not clean): look first"; }
+  # autosave refs of branches that are gone (local and on origin); unreachable origin -> nothing deleted
+  remote="$(with_timeout "${JOB_GIT_TIMEOUT:-60}" git -C "$main" ls-remote origin 'refs/heads/*' 'refs/autosave/*')" || { echo "origin unreachable: autosave refs kept"; exit 0; }
+  heads="$(sed -nE 's#^[0-9a-f]+[[:space:]]+refs/heads/##p' <<<"$remote")"
+  rsaves="$(sed -nE 's#^[0-9a-f]+[[:space:]]+refs/autosave/##p' <<<"$remote")"
+  saves="$( { git -C "$main" for-each-ref --format='%(refname)' refs/autosave/ | sed 's#^refs/autosave/##'; echo "$rsaves"; } | sort -u)"
+  live="$(git -C "$main" worktree list --porcelain | sed -nE 's#^branch refs/heads/##p')"   # checked out somewhere: never
+  while IFS= read -r b; do
+    [ -n "$b" ] && git check-ref-format "refs/heads/$b" || continue
+    if grep -qxF -- "$b" <<<"$live"; then continue; fi
+    if grep -qxF -- "$b" <<<"$heads"; then continue; fi                       # still on origin
+    if git -C "$main" show-ref -q --verify "refs/heads/$b"; then                 # local branch: gone only if it was pushed
+      [ "$(git -C "$main" config "branch.$b.remote")" = origin ] && [ "$(git -C "$main" config "branch.$b.merge")" = "refs/heads/$b" ] || continue
+    fi
+    git -C "$main" update-ref -d "refs/autosave/$b" 2>/dev/null || true
+    grep -qxF -- "$b" <<<"$rsaves" && { GIT_TERMINAL_PROMPT=0 with_timeout "${JOB_GIT_TIMEOUT:-60}" git -C "$main" push -q origin ":refs/autosave/$b" >/dev/null 2>&1 || true; }
+    echo "deleted refs/autosave/$b (branch gone)"
+  done <<<"$saves" ;;
 *) usage ;;
 esac
