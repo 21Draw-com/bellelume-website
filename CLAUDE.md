@@ -21,6 +21,12 @@ The last step of every job (every PR opened, every review round, every stop): se
 `PR <full link> ready for review` (or: `stopped: <reason, one line>`).
 Find the name with ListAgents if needed. One line, nothing else; no secrets. It is information for infra, not a request to do anything.
 
+## Job sessions (infra-control#147, 2026-11-24)
+The main builder coordinates. Each **independent** issue (no blocked_by/waiting on another, no shared files) runs as its own visible Claude Remote session `<repo>-<N> <title>`, in its own worktree, at most 3 at once. Each one opens ONE PR and messages infra-control when done.
+- Start from the main clone: `bash scripts/job-session.sh start <N>` (`--dry-run` first; `list`; `close <N>` after its PR).
+- Own role of the main builder: review the job PRs (QA for their tier), keep the status issue current, report each job PR to infra. Dependent issues wait for their blocker's merge.
+- Note: the script assumes the default branch is `main`; this repo uses `master` (open point with infra).
+
 ## File Structure
 - `index.html` - Main HTML file
 - `css/styles.css` - All styles using CSS custom properties
