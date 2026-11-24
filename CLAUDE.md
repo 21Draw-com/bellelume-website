@@ -16,6 +16,13 @@ Belle Lume website - A Swedish digital marketing agency specializing in performa
 - **Branches and PRs only; never push to master** (that publishes the site). infra merges
 - State lives in this repo, its issues (see the "Status: bellelume builder" issue) and this file
 
+## Parallel streams (infra-control#144, 2026-11-24)
+Independent issues start at once, not one after another. Two issues are independent when neither is blocked_by / waiting on the other and the issues name no shared files.
+- Run each in its own git worktree with its own subagent, at most 2-3 at the same time.
+- One PR per issue; the same review gates (review, CI, the verified yes).
+- Dependent issues wait for their blocker's merge.
+- infra's ledger lists what can start side by side.
+
 ## Tell infra when done (infra-control#151, 2026-11-24)
 The last step of every job (every PR opened, every review round, every stop): send ONE message to the session **infra-control** with the SendMessage tool:
 `PR <full link> ready for review` (or: `stopped: <reason, one line>`).
