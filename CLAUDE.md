@@ -35,6 +35,13 @@ An improvement to how agents work (templates, builder kit, ledger, skills, share
 ## Asking a person for a yes (Renco 2026-11-24)
 A PR review, a merge, a decision: **one question per message**, the next only after the answer. Give **the direct link** (the PR and the reviewed commit) and the exact command if the person must run something; **a plain summary** (what, why, risk, undo, a few lines); and **your recommendation** (yes / not yet / no, one line why) after your own "why not" check: behind the default branch? CI green? reviewed against the plan? does it reach production (a push to master publishes the site)? does it describe something not built yet? A "not yet" says what must happen first, who does it, and when you ask again.
 
+## Standing rules (all builders, infra 2026-11-24)
+1. **Every task becomes a GitHub issue in this repo before starting**, with a "Done when" a person can check. Never work from memory or context. Nothing may stay lying: an issue is closed with its commit/PR, or it says on top what it waits on and since when.
+2. **Dependencies are links, not prose.** If the work needs another agent or builder (its MCP door, a tool, a field, an event), link it with GitHub's "blocked by" (the issue in their repo, or in renco-og/infra-control if none exists yet) and write it in the status issue. If a task cannot be done because another agent's door falls short, **tell infra at once** in the status issue; infra coordinates the fix. Never work around a missing door silently.
+3. **"For infra after the merge"** in a PR body lists every one-off step (a run, a relist, a pin move). If none: write "none". Better: make the code do it itself or fail loudly.
+4. The status issue shows: working on, waiting on (with links), blocked by (with links).
+5. Worktrees: remove a worktree as soon as its PR is pushed or merged; a subagent with worktree isolation removes its worktree at the end of its job.
+
 ## File Structure
 - `index.html` - Main HTML file
 - `css/styles.css` - All styles using CSS custom properties
