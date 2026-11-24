@@ -4,17 +4,37 @@
   "21Draw-com/bellelume-website#2": {
    "from_renco": false,
    "state": "open",
-   "next": "keep this status issue current; report each PR to infra-control",
+   "next": "after a restart: first SendMessage to infra-control 'resume: <what you work on now>' (infra-control#174); then keep this status issue current and report each PR to infra-control",
+   "waits_on": [],
+   "notes": [
+    "2026-11-24 16:37 Saved before a clean-context restart (infra-control#174). Open work: PR #4 (issue #3) and PR #6 (issue #5), both conflicting with master, both waiting for a rebase by me and then a merge by infra."
+   ]
+  },
+  "21Draw-com/bellelume-website#3": {
+   "from_renco": false,
+   "state": "open",
+   "next": "FIRST after restart: rebase PR #4 on master (conflict in CLAUDE.md since #8/#10 merged), push, tell infra-control",
    "waits_on": [],
    "notes": []
   },
-  "21Draw-com/bellelume-website#14": {
+  "21Draw-com/bellelume-website#5": {
    "from_renco": false,
    "state": "open",
-   "next": "PR #13 waits for infra's review and merge",
+   "next": "after #3: rebase PR #6 on master (conflict in CLAUDE.md), push, tell infra-control",
    "waits_on": [],
    "notes": []
   }
  },
- "archive": {}
+ "archive": {
+  "21Draw-com/bellelume-website#14": {
+   "from_renco": false,
+   "state": "verified",
+   "next": "done: merged and verified, nothing left",
+   "waits_on": [],
+   "notes": [
+    "2026-11-24 16:37 verified: master 7f0092a: scripts/job-session.sh byte-identical to kit 7033f6a, .claude/settings.json JSON-equal to the kit; PR #13 merged, #12 and #14 closed"
+   ],
+   "archived": "2026-11-24"
+  }
+ }
 }
