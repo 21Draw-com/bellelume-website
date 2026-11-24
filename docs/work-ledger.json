@@ -1,0 +1,13 @@
+{
+ "about": "This builder's notes layer of the ledger: only what GitHub cannot say. Facts are rebuilt from GitHub (scripts/ledger.sh rebuild). Edit only via scripts/ledger.sh note|set|verify.",
+ "items": {
+  "21Draw-com/bellelume-website#2": {
+   "from_renco": false,
+   "state": "open",
+   "next": "keep this status issue current; report each PR to infra-control",
+   "waits_on": [],
+   "notes": []
+  }
+ },
+ "archive": {}
+}

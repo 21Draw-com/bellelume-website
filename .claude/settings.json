@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(scripts/ledger.sh:*)",
+      "Bash(./scripts/ledger.sh:*)",
+      "Bash(scripts/job-session.sh:*)",
+      "Bash(./scripts/job-session.sh:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/ledger.sh hook-start",
+            "timeout": 35
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/ledger.sh hook-prompt",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
