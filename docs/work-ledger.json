@@ -7,14 +7,16 @@
    "next": "keep this status issue current; report each PR to infra-control",
    "waits_on": [],
    "notes": []
-  },
+  }
+ },
+ "archive": {
   "21Draw-com/bellelume-website#14": {
    "from_renco": false,
    "state": "open",
    "next": "PR #13 waits for infra's review and merge",
    "waits_on": [],
-   "notes": []
+   "notes": [],
+   "archived": "2026-11-24"
   }
- },
- "archive": {}
+ }
 }
