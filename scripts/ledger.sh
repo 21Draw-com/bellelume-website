@@ -14,7 +14,7 @@
 #   ledger.sh set <ref> next <text> | state open|waiting|merged-unverified|verified | waits_on <list>|- | from_renco true|false
 #       waits_on takes issue refs (cross-organisation blockers GitHub cannot link) and named parties: renco, infra, <builder>
 #   ledger.sh verify <ref> <what you saw live>     leave merged-unverified
-#   ledger.sh hook-start | hook-prompt             the Claude hooks: bounded (10 s), fail-soft, always exit 0
+#   ledger.sh hook-start | hook-prompt             the Claude hooks: bounded (8 s with a cache, 30 s without), fail-soft, always exit 0
 export LEDGER_ROOT="${LEDGER_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 PY="$(cat <<'PYEOF'
 import json, os, re, sys, subprocess, time, datetime as dt
@@ -62,14 +62,17 @@ issues(states:OPEN,first:100,after:$ic){pageInfo{hasNextPage endCursor}nodes{num
 pullRequests(states:OPEN,first:100,after:$pc){pageInfo{hasNextPage endCursor}nodes{number title headRefName createdAt updatedAt isDraft reviewDecision
  closingIssuesReferences(first:10){nodes{number}}}}}}"""
 
-def rebuild(budget=10):
+class Slow(Exception): pass
+
+def rebuild(budget=30):
     o, nm = SLUG.split("/"); issues, prs, ic, pc, more = {}, {}, None, None, True
     end = time.time() + budget
     while more:
         cmd = ["gh", "api", "graphql", "-f", "query=" + Q, "-f", "o=" + o, "-f", "n=" + nm] + (["-f", "ic=" + ic] if ic else []) + (["-f", "pc=" + pc] if pc else [])
-        r = run(cmd, max(1, end - time.time()))
+        try: r = run(cmd, max(1, end - time.time()))
+        except subprocess.TimeoutExpired: raise Slow("no answer within the budget")
         try: d = json.loads(r.stdout)["data"]["repository"]
-        except Exception: raise RuntimeError((r.stderr.strip() or "no answer from GitHub")[:80])
+        except Exception: raise Slow((r.stderr.strip() or "no answer from GitHub")[:80])
         for i in d["issues"]["nodes"]:
             issues[str(i["number"])] = {"title": i["title"], "updated": i["updatedAt"], "labels": [l["name"] for l in i["labels"]["nodes"]],
                 "blocked_by": [{"ref": f'{b["repository"]["nameWithOwner"]}#{b["number"]}', "state": b["state"]} for b in i["blockedBy"]["nodes"]]}
@@ -90,6 +93,11 @@ def rebuild(budget=10):
 def facts_or_build():
     f = load(FACTS, None)
     return f if f else rebuild()
+
+def cache_note(why):
+    f = load(FACTS, None)
+    return f"ledger: GitHub slow ({why}), showing the cache from {f['built'][:16]}" if f else "ledger: no cache yet and GitHub did not answer in time, run `scripts/ledger.sh rebuild` again"
+
 
 def analyse():
     n = notes(); f = facts_or_build(); issues = f["issues"]
@@ -171,7 +179,8 @@ def item(n, key): return n["items"].setdefault(key, {"from_renco": False, "state
 def stamp(): return dt.datetime.now().strftime("%Y-%m-%d %H:%M")
 def main(a):
     c, r = (a + [""])[0], a[1:]
-    if c == "rebuild": f = rebuild(); print(f"ledger: {len(f['issues'])} open issues, {len(f['prs'])} open PRs")
+    if c == "rebuild":
+        f = rebuild(); print(f"ledger: {len(f['issues'])} open issues, {len(f['prs'])} open PRs")
     elif c == "show": show()
     elif c == "hygiene": hygiene()
     elif c == "overview": overview()
@@ -191,12 +200,15 @@ def main(a):
     elif c == "verify":
         n = notes(); it = item(n, ref(r[0])); it["state"] = "verified"; it["notes"].append(f"{stamp()} verified: {' '.join(r[1:])}"); save(NOTES, n)
     elif c == "hook-start":
-        try: rebuild(budget=8)
-        except Exception as e: print(f"ledger: stale ({str(e)[:100]}), showing the last cache")
-        show(brief=True)
+        have = os.path.exists(FACTS)                  # with a cache the start stays quick; without one it may take the full budget
+        try: rebuild(budget=8 if have else 30)
+        except Exception as e: print(cache_note(str(e)[:60]))
+        if os.path.exists(FACTS): show(brief=True)
     elif c == "hook-prompt": print("ledger: a new task? Issue first, then `scripts/ledger.sh note <#n> <text>` and `set <#n> next <text>`.")
     else: sys.exit("usage: ledger.sh show|hygiene|overview|rebuild|note|set|verify (see the header of this file)")
-main(sys.argv[1:])
+try: main(sys.argv[1:])
+except Slow as e: sys.exit(cache_note(str(e)[:60]))
+except subprocess.TimeoutExpired: sys.exit(cache_note("timeout"))
 PYEOF
 )"
 case "${1:-}" in

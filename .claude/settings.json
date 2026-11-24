@@ -14,7 +14,7 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/ledger.sh hook-start",
-            "timeout": 10
+            "timeout": 35
           }
         ]
       }
