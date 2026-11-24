@@ -1,0 +1,5 @@
+{
+ "about": "This builder's notes layer of the ledger: only what GitHub cannot say. Facts are rebuilt from GitHub (scripts/ledger.sh rebuild). Edit only via scripts/ledger.sh note|set|verify.",
+ "items": {},
+ "archive": {}
+}
