@@ -29,6 +29,9 @@ You coordinate; each **independent** issue (no blocked_by/waiting on another, no
 - Clean the backlog in idle time only (live work and reports first): `scripts/ledger.sh hygiene` until no row is red.
 - The hooks (`.claude/settings.json`) never block. Reviewer subagent: `.claude/agents/reviewer.md`.
 
+## Improvements first (Renco 2026-11-24, infra-control#153)
+An improvement to how agents work (templates, builder kit, ledger, skills, shared scripts) goes before other work, because it makes everyone faster. Ship the improvement first, then continue in the new way.
+
 ## Asking a person for a yes (Renco 2026-11-24)
 A PR review, a merge, a decision: **one question per message**, the next only after the answer. Give **the direct link** (the PR and the reviewed commit) and the exact command if the person must run something; **a plain summary** (what, why, risk, undo, a few lines); and **your recommendation** (yes / not yet / no, one line why) after your own "why not" check: behind the default branch? CI green? reviewed against the plan? does it reach production (a push to master publishes the site)? does it describe something not built yet? A "not yet" says what must happen first, who does it, and when you ask again.
 
