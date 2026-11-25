@@ -10,24 +10,6 @@
     "2026-11-24 16:37 Saved before a clean-context restart (infra-control#174). Open work: PR #4 (issue #3) and PR #6 (issue #5), both conflicting with master, both waiting for a rebase by me and then a merge by infra.",
     "2026-11-24 18:35 2026-11-24: kit 1.0.2 merged (#22, 38363b9), kit-check green on master; #20, #21 closed; scratch-outside-worktree rule ended"
    ]
-  },
-  "21Draw-com/bellelume-website#23": {
-   "from_renco": false,
-   "state": "open",
-   "next": "close after the triage message to infra; nothing to build",
-   "waits_on": [],
-   "notes": [
-    "2026-11-25 04:15 brief 2026-11-25-0414 backlog-burn: triage 0 closed, 0 to build, 0 questions, 1 waiting (PR #15)"
-   ]
-  },
-  "21Draw-com/bellelume-website#24": {
-   "from_renco": false,
-   "state": "open",
-   "next": "PR open (risky): Renco's verified yes, then infra merges",
-   "waits_on": [],
-   "notes": [
-    "2026-11-25 04:16 kit 1.0.3 copied from the channel folder (owner rencosmeding); kit-check holds against the repo and the folder manifest; commit 82c6fd7"
-   ]
   }
  },
  "archive": {
@@ -74,6 +56,26 @@
     "2026-11-24 18:01 kit 1.0.0 from the channel folder builder-kit-1.0.0; service skills knowledge and release left out (not a service repo); docs/work-ledger.json kept (data, installed once)"
    ],
    "archived": "2026-11-24"
+  },
+  "21Draw-com/bellelume-website#23": {
+   "from_renco": false,
+   "state": "open",
+   "next": "close after the triage message to infra; nothing to build",
+   "waits_on": [],
+   "notes": [
+    "2026-11-25 04:15 brief 2026-11-25-0414 backlog-burn: triage 0 closed, 0 to build, 0 questions, 1 waiting (PR #15)"
+   ],
+   "archived": "2026-11-25"
+  },
+  "21Draw-com/bellelume-website#24": {
+   "from_renco": false,
+   "state": "open",
+   "next": "PR open (risky): Renco's verified yes, then infra merges",
+   "waits_on": [],
+   "notes": [
+    "2026-11-25 04:16 kit 1.0.3 copied from the channel folder (owner rencosmeding); kit-check holds against the repo and the folder manifest; commit 82c6fd7"
+   ],
+   "archived": "2026-11-25"
   }
  }
 }
