@@ -15,8 +15,7 @@ Belle Lume website - A Swedish digital marketing agency specializing in performa
 - Identity: the GitHub App `website-bellelume-builder` (21Draw-com, this repo only), not renco-og
 - **Never push to master: that publishes the site.** infra merges
 - Status issue: "Status: bellelume builder" (#2)
-- A PR ready for infra's review carries the label `infra-review`; the SendMessage is optional. A job session labels its own PR. A stop (`stopped: <reason>`) still goes to infra by SendMessage. The label is a signal, never a review or an approval (infra-control#238/#239, until the kit carries it, infra-control#241)
-- Job worktrees run their own install (`npm ci` / `uv sync`), never symlink `node_modules` from the main clone (this site has no install step today)
+- The PR label `infra-review` (kit rule) is a signal, never a review or an approval; a stop still sends `stopped: <reason>` by SendMessage
 - Safety-critical paths: `.github/CODEOWNERS` (the kit paths and `CNAME`, which carries the custom domain)
 - The rules every builder shares (job sessions, ledger, asking for a yes, risk tiers, the finish message) are in the kit file imported here:
 
