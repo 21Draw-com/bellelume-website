@@ -19,6 +19,15 @@
    "notes": [
     "2026-11-25 04:15 brief 2026-11-25-0414 backlog-burn: triage 0 closed, 0 to build, 0 questions, 1 waiting (PR #15)"
    ]
+  },
+  "21Draw-com/bellelume-website#24": {
+   "from_renco": false,
+   "state": "open",
+   "next": "PR open (risky): Renco's verified yes, then infra merges",
+   "waits_on": [],
+   "notes": [
+    "2026-11-25 04:16 kit 1.0.3 copied from the channel folder (owner rencosmeding); kit-check holds against the repo and the folder manifest; commit 82c6fd7"
+   ]
   }
  },
  "archive": {
