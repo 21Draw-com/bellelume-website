@@ -2,11 +2,11 @@
 name: ledger
 description: Shows a builder its own work as a dependency tree that survives any restart - what can start now, what waits on whom, what merged but is not verified - and checks the repository's hygiene. Use at session start, when planning the next job, before saying anything is live, and when cleaning up an old backlog.
 ---
-<!-- builder-kit 1.0.3 -->
+<!-- builder-kit 1.0.5 -->
 
 # Ledger (builder mode)
 
-Facts come from GitHub, notes from `docs/work-ledger.json`. Never from memory, never a second task list.
+Facts come from GitHub, notes from the store outside the tree (`$(git rev-parse --git-common-dir)/builder-ledger/notes.json`, one for the main clone and every worktree, never committed). Never from memory, never a second task list.
 The script is `scripts/ledger.sh`, a kit file infra installs and updates; never edit it here (`scripts/kit-check.sh`).
 
 ## Every session

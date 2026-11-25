@@ -1,4 +1,4 @@
-<!-- builder-kit 1.0.3: a kit file. Never edit it here; a change goes to infra (status issue), infra ships a new kit version. -->
+<!-- builder-kit 1.0.5: a kit file. Never edit it here; a change goes to infra (status issue), infra ships a new kit version. -->
 # Rules every builder shares
 
 Imported by this repository's `CLAUDE.md` (`@.claude/builder-rules.md`). `CLAUDE.md` holds only what is particular to
@@ -27,6 +27,8 @@ Two issues are independent when neither blocks the other and they name no shared
 its blocker's merge. Your work as a dependency tree: skill `ledger` (`scripts/ledger.sh show`, also shown at
 session start). Overview for the owner: skill `status-overview`. Planning: skill `planning`.
 
+Each job session runs its own install (`npm ci` or the repo's equivalent) inside its worktree: **never symlink `node_modules` (or any folder) from the main clone**; the symlink points outside the worktree and a permission prompt stops an unattended session.
+
 ## Never from memory
 Every task (the owner's, a channel brief, infra's) becomes an issue in this repository **before** work starts, then
 `scripts/ledger.sh note <#N> "<text>"` and `set <#N> next "<step>"`. After a restart or a context summary: `ledger.sh
@@ -41,6 +43,15 @@ Waiting on: <issue> <- <who or what> <link>
 Next: <issue> <next step>
 For the owner: <one decision, with your recommendation>   (or "nothing")
 ```
+
+## Done when, blockers, worktrees
+- **Every issue and PR says "Done when"** (the observable end state, not the activity). **Nothing stays lying:** a merged
+  PR is `merged-unverified` until you verified it live (`ledger.sh verify`); a finished job closes its issue; a branch,
+  worktree or note with no owner and no next step is closed or deleted, never left.
+- **Blocked-by links:** when an issue cannot start before another, link it as a GitHub `blocked_by` (`waits_on` for
+  another organisation or a named party). **Door rule (B84):** when another agent's door (MCP tool, event, API) falls
+  short of what you need, tell infra with the issue link; never work around it, never patch the other agent.
+- **Remove the job worktree once its PR is pushed** (`scripts/job-session.sh close <N>`); the branch lives on GitHub.
 
 ## Backlog triage (idle time only, after live work and reports)
 For each open issue decide one of four and write it on the issue: **obvious fix** (clear, small, in scope, no
@@ -86,6 +97,7 @@ are never your in-session helpers (they are started visibly, as your `CLAUDE.md`
 - The inventories in `CLAUDE.md` and the README ("Timed behaviour", "What runs") change in the same PR as the code.
 
 ## Finish message
+**The ready signal is the PR label `infra-review`:** when a PR is ready, add it (`gh pr edit <PR> --add-label infra-review`; create the label if the repository lacks it: `gh label create infra-review`). Infra works the labelled queue oldest first; a chat message is optional.
 The last step of every job (every PR opened, every review round, every stop) is ONE message to the session
 `infra-control` with SendMessage: `PR <full link> ready for review`, or `stopped: <reason, one line>`. One line, no
 secrets; information, not a request. A job session also comments its PR link on its issue so you see it.
