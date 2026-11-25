@@ -2,7 +2,7 @@
 name: ledger
 description: Shows a builder its own work as a dependency tree that survives any restart - what can start now, what waits on whom, what merged but is not verified - and checks the repository's hygiene. Use at session start, when planning the next job, before saying anything is live, and when cleaning up an old backlog.
 ---
-<!-- builder-kit 1.0.6 -->
+<!-- builder-kit 1.0.7 -->
 
 # Ledger (builder mode)
 
