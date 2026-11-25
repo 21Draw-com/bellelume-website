@@ -2,7 +2,7 @@
 name: status-overview
 description: Writes a builder's one-screen overview for its repository - what each job session does, what can start now, what waits on whom, its own to-dos - ending with one question to Renco. Use when Renco asks for an overview, status or "how is it going", and after a long stretch of work before handing back.
 ---
-<!-- builder-kit 1.0.5 -->
+<!-- builder-kit 1.0.7 -->
 
 # Status overview (one repository)
 

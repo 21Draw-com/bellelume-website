@@ -1,4 +1,4 @@
-<!-- builder-kit 1.0.5 -->
+<!-- builder-kit 1.0.7 -->
 # Worker spec: <name>
 
 Status: draft | agreed | built (PR) · Project: <repo> · Requested by: <person>, <date>

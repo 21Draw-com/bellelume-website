@@ -2,7 +2,7 @@
 name: agent-worker-task
 description: Turns a request for a new agent-worker into a worker spec and a set of issues - maps what the person already said onto the eleven parts of every worker, asks only for the missing ones, writes docs/workers/<name>.md and one issue per part with its dependencies. Use when someone asks for an agent-worker, an automated check, audit or allocation that needs judgement, or a sub-worker that another worker calls.
 ---
-<!-- builder-kit 1.0.5 -->
+<!-- builder-kit 1.0.7 -->
 
 # Agent-worker task
 
