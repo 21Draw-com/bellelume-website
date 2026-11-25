@@ -1,11 +1,12 @@
 #!/bin/bash
-# builder-kit 1.0.3: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
+# builder-kit 1.0.5: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
 # Builder ledger: this repository's own work as a dependency tree that survives any restart (infra-control#149).
 # A kit file infra ships; the same file in every builder repo.
 # Two layers, no second source of truth:
 #   facts  ~/.cache/builder-ledger/<owner>__<repo>.json  open issues + PRs + blocked_by (with the live state of every
 #          external blocker), one GraphQL query, rebuilt from GitHub at each trigger, never in git
-#   notes  docs/work-ledger.json  only what GitHub cannot say: `next` step, `waits_on`, state, notes
+#   notes  <git common dir>/builder-ledger/notes.json  only what GitHub cannot say: `next` step, `waits_on`, state, notes;
+#          one store for the main clone and every worktree, never in the tree, never committed (kit 1.0.5)
 # Read-only towards GitHub. Never polls: it runs at session start (hook), before a plan, after a merge, by hand.
 #   ledger.sh show                 can start now (by stream) | waiting on | merged, not verified | decisions waiting | PRs
 #   ledger.sh hygiene              the check, numbers only, green/amber/red; infra reads the same table
@@ -15,13 +16,13 @@
 #   ledger.sh set <ref> next <text> | state open|waiting|merged-unverified|verified | waits_on <list>|- | from_renco true|false
 #       waits_on takes issue refs (cross-organisation blockers GitHub cannot link) and named parties: renco, infra, <builder>
 #   ledger.sh verify <ref> <what you saw live>     leave merged-unverified
-#   ledger.sh hook-start | hook-prompt             the Claude hooks: bounded (8 s with a cache, 30 s without), fail-soft, always exit 0
+#   ledger.sh hook-start | hook-prompt             the Claude hooks: bounded (8 s with a cache, 30 s without), fail-soft, always exit 0,
+#       read-only towards the tree (no archiving: that happens only in rebuild/note/set/verify)
 export LEDGER_ROOT="${LEDGER_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 PY="$(cat <<'PYEOF'
 import json, os, re, sys, subprocess, time, datetime as dt
 
 ROOT = os.environ["LEDGER_ROOT"]
-NOTES = os.path.join(ROOT, "docs", "work-ledger.json")
 CACHE = os.environ.get("LEDGER_CACHE", os.path.expanduser("~/.cache/builder-ledger"))
 NOW = dt.datetime.now(dt.timezone.utc)
 STATES = ("open", "waiting", "merged-unverified", "verified")
@@ -46,7 +47,32 @@ def slug():
     return m.group(1)
 SLUG = slug(); FACTS = os.path.join(CACHE, SLUG.replace("/", "__") + ".json")
 
+def store():
+    g = run(["git", "rev-parse", "--git-common-dir"]).stdout.strip()
+    if not g: sys.exit("ledger: not a git checkout")
+    return os.path.join(os.path.abspath(os.path.join(ROOT, g)), "builder-ledger", "notes.json")
+NOTES = store()
+OLD = os.path.join(ROOT, "docs", "work-ledger.json")    # kit <= 1.0.3 kept the notes in the tree: migrated once, then `git rm` it
+
+def migrate():
+    """One time: first run with no store yet and the old tracked file present -> copy its content into the store.
+    The tracked file is never touched (the install PR `git rm`s it); once the store exists this is never looked at again."""
+    if os.path.exists(NOTES) or not os.path.exists(OLD): return
+    old = load(OLD, None)
+    if isinstance(old, dict): save(NOTES, old)
+
+def archive_closed(n):
+    """Closed issue -> archive (not while merged-unverified). Only called from rebuild/note/set/verify, never from a hook."""
+    f = load(FACTS, None)
+    if not f: return False
+    ch = False
+    for k in list(n["items"]):
+        if k.startswith(SLUG + "#") and k.rsplit("#", 1)[1] not in f["issues"] and n["items"][k]["state"] != "merged-unverified":
+            n["archive"][k] = dict(n["items"].pop(k), archived=iso()[:10]); ch = True
+    return ch
+
 def notes():
+    migrate()
     n = load(NOTES, {})
     n.setdefault("about", "This builder's notes layer of the ledger: only what GitHub cannot say. Facts are rebuilt from GitHub (scripts/ledger.sh rebuild). Edit only via scripts/ledger.sh note|set|verify.")
     n.setdefault("items", {}); n.setdefault("archive", {})
@@ -65,7 +91,7 @@ pullRequests(states:OPEN,first:100,after:$pc){pageInfo{hasNextPage endCursor}nod
 
 class Slow(Exception): pass
 
-def rebuild(budget=30):
+def rebuild(budget=30, heal=False):
     o, nm = SLUG.split("/"); issues, prs, ic, pc, more = {}, {}, None, None, True
     end = time.time() + budget
     while more:
@@ -84,11 +110,9 @@ def rebuild(budget=30):
         pc = d["pullRequests"]["pageInfo"]["endCursor"] if d["pullRequests"]["pageInfo"]["hasNextPage"] else None
         more = bool(ic or pc)
     facts = {"built": iso(), "issues": issues, "prs": prs}; save(FACTS, facts)
-    n = notes(); ch = False
-    for k in list(n["items"]):                       # self-healing: closed issue -> archive (not while merged-unverified)
-        if k.startswith(SLUG + "#") and k.rsplit("#", 1)[1] not in issues and n["items"][k]["state"] != "merged-unverified":
-            n["archive"][k] = dict(n["items"].pop(k), archived=iso()[:10]); ch = True
-    if ch: save(NOTES, n)
+    if heal:
+        n = notes()
+        if archive_closed(n): save(NOTES, n)
     return facts
 
 def facts_or_build():
@@ -156,13 +180,13 @@ def hygiene():
     for fn in (".claude/settings.json", ".claude/settings.local.json"):
         try: hook = hook or "ledger.sh hook-start" in open(os.path.join(ROOT, fn)).read()
         except OSError: pass
-    adopted = os.path.exists(NOTES) and hook
+    adopted = hook or os.path.exists(NOTES)
     def rag(x, amber, red): return "green" if x < amber else ("amber" if x < red else "red")
     rows = [("open issues without next step or blocker", len(no_next), rag(len(no_next), 1, 4)),
             ("open issues untouched > 7 days", len(stale), rag(len(stale), 1, 4)),
             ("PRs open > 24 h with no move", len(slow_pr), rag(len(slow_pr), 1, 3)),
             ("merged, not verified (verify each in the live system)", len(unver), rag(len(unver), 1, 3)),
-            ("ledger adopted (notes file + SessionStart hook)", 0 if adopted else 1, "green" if adopted else "red")]
+            ("ledger adopted (SessionStart hook or notes store)", 0 if adopted else 1, "green" if adopted else "red")]
     print(f"hygiene {SLUG}")
     for t, c, r in rows: print(f"  {r:6} {c:3}  {t}")
     for lbl, lst in (("no next", no_next), ("untouched", stale), ("slow PRs", slow_pr)):
@@ -181,12 +205,12 @@ def stamp(): return dt.datetime.now().strftime("%Y-%m-%d %H:%M")
 def main(a):
     c, r = (a + [""])[0], a[1:]
     if c == "rebuild":
-        f = rebuild(); print(f"ledger: {len(f['issues'])} open issues, {len(f['prs'])} open PRs")
+        f = rebuild(heal=True); print(f"ledger: {len(f['issues'])} open issues, {len(f['prs'])} open PRs")
     elif c == "show": show()
     elif c == "hygiene": hygiene()
     elif c == "overview": overview()
     elif c == "note":
-        n = notes(); item(n, ref(r[0]))["notes"].append(f"{stamp()} {' '.join(r[1:])}"); save(NOTES, n)
+        n = notes(); item(n, ref(r[0]))["notes"].append(f"{stamp()} {' '.join(r[1:])}"); archive_closed(n); save(NOTES, n)
     elif c == "set":
         if len(r) < 3: sys.exit("usage: set <ref> next|state|waits_on|from_renco <value>")
         n = notes(); it = item(n, ref(r[0])); fld, val = r[1], " ".join(r[2:])
@@ -197,9 +221,9 @@ def main(a):
         elif fld == "from_renco": it[fld] = val.lower() in ("true", "yes", "1")
         elif fld == "waits_on": it[fld] = [] if val == "-" else [ref(x) if "#" in x else x.strip() for x in val.split(",") if x.strip()]
         else: sys.exit("fields: next, state, waits_on, from_renco")
-        save(NOTES, n)
+        archive_closed(n); save(NOTES, n)
     elif c == "verify":
-        n = notes(); it = item(n, ref(r[0])); it["state"] = "verified"; it["notes"].append(f"{stamp()} verified: {' '.join(r[1:])}"); save(NOTES, n)
+        n = notes(); it = item(n, ref(r[0])); it["state"] = "verified"; it["notes"].append(f"{stamp()} verified: {' '.join(r[1:])}"); archive_closed(n); save(NOTES, n)
     elif c == "hook-start":
         have = os.path.exists(FACTS)                  # with a cache the start stays quick; without one it may take the full budget
         try: rebuild(budget=8 if have else 30)
