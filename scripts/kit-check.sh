@@ -1,5 +1,5 @@
 #!/bin/bash
-# builder-kit 1.0.5: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
+# builder-kit 1.0.6: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
 # The kit contract: every kit file in this repository is byte for byte the version infra shipped. Run in CI and before
 # every pull request: scripts/kit-check.sh [repo dir]   (no network, read-only; exit 0 = holds, 1 = a finding, each printed)
 # Infra's merge check runs ITS OWN copy with its own manifest against the PR head (the repo's copies are editable):

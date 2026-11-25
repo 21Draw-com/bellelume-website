@@ -1,5 +1,5 @@
 #!/bin/bash
-# builder-kit 1.0.5: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
+# builder-kit 1.0.6: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
 # Builder ledger: this repository's own work as a dependency tree that survives any restart (infra-control#149).
 # A kit file infra ships; the same file in every builder repo.
 # Two layers, no second source of truth:
