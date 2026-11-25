@@ -2,7 +2,7 @@
 name: planning
 description: Guides how a builder plans and receives work - interview the person for an unclear request and write a spec, take a clear plan straight into issues without a new plan, research bigger jobs in plan mode, and review against the plan. Use when a request is unclear or large, when a plan arrives from infra or a person, and before reviewing finished work.
 ---
-<!-- builder-kit 1.0.2 -->
+<!-- builder-kit 1.0.3 -->
 
 # Planning
 

@@ -1,4 +1,4 @@
-<!-- builder-kit 1.0.2 -->
+<!-- builder-kit 1.0.3 -->
 ## What and why
 Closes #
 
