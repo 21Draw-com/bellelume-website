@@ -10,6 +10,12 @@
 .netrc
 id_rsa*
 id_ed25519*
+*.p8
+*.keystore
+*.jks
+credentials*
+id_ecdsa*
+.git-credentials
 *secret*
 
 # macOS
