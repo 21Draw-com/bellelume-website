@@ -1,0 +1,16 @@
+# Keys and credentials: never commit (GitHub Pages serves master)
+*.pem
+*.key
+*.p12
+*.pfx
+*.asc
+*.gpg
+.env*
+.npmrc
+.netrc
+id_rsa*
+id_ed25519*
+*secret*
+
+# macOS
+.DS_Store
