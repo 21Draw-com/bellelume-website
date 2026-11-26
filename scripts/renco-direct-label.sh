@@ -1,5 +1,5 @@
 #!/bin/bash
-# builder-kit 1.2.0: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
+# builder-kit 1.4.0: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
 # Creates (or updates) the label `renco-direct` in a builder repository: scripts/renco-direct-label.sh [owner/repo]
 # No argument = the repository of origin. Idempotent. The label marks an issue or PR where the owner decided something
 # directly with the builder (rule "Renco direct" in .claude/builder-rules.md); infra finds it by code (ledger.sh delta).

@@ -1,5 +1,5 @@
 #!/bin/bash
-# builder-kit 1.2.0: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
+# builder-kit 1.4.0: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
 # Visible job sessions for a builder (#147, pattern of #144). Run by the MAIN builder session in its own account; no root.
 # One independent issue = one tmux session + Claude Remote session "<repo>-<N> <short issue title>" in its own git worktree,
 # closed after its PR. A kit file infra ships; the same file in every builder repo.
@@ -95,14 +95,22 @@ start)
   if [ "$dry" = --dry-run ]; then echo "issue writers: $w"; echo "would: ff $main to origin/$br; write the brief $brief; git worktree add --detach $wt; tmux new-session -d -s $sess -c $wt claude --model $model --effort $effort --name '$name' --remote-control '$name'"; exit 0; fi
   mkdir -p "$base" && printf '%s\n' "$body" > "$brief" || die "cannot write the brief $brief"
   git -C "$main" worktree add -q --detach "$wt" "$rev"
-  "$T" new-session -d -s "$sess" -c "$wt" /bin/zsh -lic "claude --model $model --effort $effort --name '$name' --remote-control '$name' --permission-mode auto \"$prompt\""
+  # Kit 1.4.0 (shared repository, .github/kit.conf shared-repo=yes): a nested CLAUDE.md is not loaded at start, so the builder
+  # rules go in through the system prompt, built by this script's own sibling builder-prompt.sh (never the worktree's copy).
+  extra=""
+  if grep -qx 'shared-repo=yes' "$wt/.github/kit.conf" 2>/dev/null; then
+    pf="$base/$n.builder-prompt.md"
+    bash "$(cd "$(dirname "$0")" && pwd)/builder-prompt.sh" "$wt" > "$pf" || die "shared repository: builder-prompt.sh could not build the builder prompt: not starting"
+    extra=" --append-system-prompt-file '$pf'"
+  fi
+  "$T" new-session -d -s "$sess" -c "$wt" /bin/zsh -lic "claude --model $model --effort $effort --name '$name' --remote-control '$name' --permission-mode auto$extra \"$prompt\""
   echo "started $sess in $wt ($model, $effort): visible in Claude Remote as '$name'" ;;
 close)
   argc $# 1 2; num "${1:-}"; n="$1"; dry="${2:-}"; sess="$repo-$n"; wt="$base/$n"
   [ -z "$dry" ] || [ "$dry" = --dry-run ] || usage
   if [ "$dry" = --dry-run ]; then echo "would: tmux kill-session -t =$sess; git worktree remove $wt (only when clean, no force); remove the brief; delete refs/autosave/<b> of branches that are gone"; exit 0; fi
   "$T" kill-session -t "=$sess" 2>/dev/null && echo "closed $sess" || echo "no $sess session"
-  rm -f "$base/$n.issue.md"
+  rm -f "$base/$n.issue.md" "$base/$n.builder-prompt.md"
   [ ! -d "$wt" ] || { git -C "$main" worktree remove "$wt" 2>/dev/null && echo "removed worktree $wt" || echo "worktree $wt kept (not clean): look first"; }
   # autosave refs of branches that are gone (local and on origin); unreachable origin -> nothing deleted
   remote="$(with_timeout "${JOB_GIT_TIMEOUT:-60}" git -C "$main" ls-remote origin 'refs/heads/*' 'refs/autosave/*')" || { echo "origin unreachable: autosave refs kept"; exit 0; }
