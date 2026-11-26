@@ -23,11 +23,13 @@ Belle Lume website - A Swedish digital marketing agency specializing in performa
 @.claude/builder-rules.md
 
 ## File Structure
-- `index.html` - Main HTML file
-- `css/styles.css` - All styles using CSS custom properties
-- `js/main.js` - JavaScript
-- `assets/images/` - Image assets (founder photos, etc.)
-- `CNAME` - Custom domain configuration
+- `docs/` - The published site: GitHub Pages serves only this folder (`master` `/docs`, #56). Everything outside it stays unpublished; no exclude list. **Only site files go in `docs/`**: plans, decisions and worker specs the kit points at `docs/` go in `notes/` here, since `docs/` is public on bellelume.se
+- `docs/index.html` - Main HTML file
+- `docs/css/styles.css` - All styles using CSS custom properties
+- `docs/js/main.js` - JavaScript
+- `docs/assets/images/` - Image assets (founder photos, etc.)
+- `docs/favicon.svg` - Favicon
+- `docs/CNAME` - Custom domain configuration
 
 ## Styling
 - Uses CSS custom properties defined in :root
