@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; form-action https://formspree.io; base-uri 'self'; object-src 'none'">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta name="description" content="Belle Lume - Vi lyfter fram skönhet i ljuset. Performance marketing för beauty-varumärken som vill skina.">
     <meta name="keywords" content="performance marketing, betald sökning, influencer marketing, e-postmarknadsföring, webbanalys, reklambyrå, beauty marketing">
     <meta property="og:title" content="Belle Lume - Vi lyfter fram skönhet i ljuset">
@@ -11,9 +13,7 @@
     <meta property="og:url" content="https://bellelume.se">
     <title>Belle Lume - Vi lyfter fram skönhet i ljuset</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preload" href="assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -367,6 +367,9 @@
                             <path d="M5 12h14M12 5l7 7-7 7"/>
                         </svg>
                     </button>
+                    <p class="form-privacy">
+                        <strong>Om dina uppgifter:</strong> När du skickar formuläret går ditt namn, din e-postadress, ditt ärende och ditt meddelande via tjänsten Formspree (Formspree, Inc., USA) till vår e-post. Vi använder uppgifterna bara för att svara dig. Vill du att vi raderar dem? Skriv det i ett meddelande här, så raderar vi dem. Webbplatsen använder inga cookies och ingen spårning.
+                    </p>
                 </form>
             </div>
         </div>
