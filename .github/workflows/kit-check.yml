@@ -6,8 +6,14 @@ on:
     branches: [master]
 permissions:
   contents: read
+# CI load (#46): a newer push to the same PR cancels its older run. A master push gets its own group per commit,
+# so no master run is ever cancelled or replaced while pending (master is live).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   kit-check:
+    # Deliberately GitHub-hosted, not [self-hosted, ci] (#46): public repo, so a fork PR must never run on infra's machines.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
