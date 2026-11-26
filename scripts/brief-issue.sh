@@ -1,9 +1,9 @@
 #!/bin/bash
-# builder-kit 1.2.0: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
+# builder-kit 1.4.0: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
 # A task from infra or the owner arrives as a channel brief; this turns it into the builder's OWN issue, the only kind
 # `job-session.sh start` runs (the login renco-og is shared, so an issue it opens is never trusted).
 #   scripts/brief-issue.sh <brief file name>     e.g. 2026-11-26-0900-infra-control-task-foo.md
-# Steps: (1) `stat` proves the brief AND its folder /Users/Shared/infra-naar-$(id -un)/ are owned by rencosmeding
+# Steps: (1) `file_owner` (scripts/portable.sh) proves the brief AND its folder /Users/Shared/infra-naar-$(id -un)/ are owned by rencosmeding
 # (a symlink or a non-regular file is refused); (2) the issue is opened with gh, i.e. under this clone's own App, with
 # the brief's title (first "# " line, else the file name) and body, the first body line being "From infra brief <name>";
 # (3) the issue number is printed: it is the issue for `scripts/job-session.sh start <N>`. Nothing else is written.
@@ -15,7 +15,8 @@ die() { echo "brief-issue: $*" >&2; exit 2; }
 name="$1"; [[ "$name" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*\.md$ && "$name" != *..* ]] || die "odd brief name (a plain file name ending in .md, no path)"
 acct="$(id -un)"; [[ "$acct" =~ ^[A-Za-z0-9_.-]+$ ]] || die "odd account name"
 dir="${BRIEF_ROOT:-/Users/Shared}/infra-naar-$acct"; file="$dir/$name"
-owner() { stat -f %Su "$1" 2>/dev/null; }
+. "$(cd "$(dirname "$0")" && pwd)/portable.sh"   # file_owner: GNU stat first, BSD fallback (kit 1.4.0)
+owner() { file_owner "$1" 2>/dev/null; }
 [ -d "$dir" ] && [ ! -L "$dir" ] || die "$dir is not a folder"
 [ "$(owner "$dir")" = rencosmeding ] || die "$dir is not owned by rencosmeding: not opening an issue"
 [ -f "$file" ] && [ ! -L "$file" ] || die "$file is not a regular file"
