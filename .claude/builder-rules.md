@@ -1,4 +1,4 @@
-<!-- builder-kit 1.2.0: a kit file. Never edit it here; a change goes to infra (status issue), infra ships a new kit version. -->
+<!-- builder-kit 1.3.0: a kit file. Never edit it here; a change goes to infra (status issue), infra ships a new kit version. -->
 # Rules every builder shares
 
 Imported by this repository's `CLAUDE.md` (`@.claude/builder-rules.md`). `CLAUDE.md` holds only what is particular to
@@ -134,12 +134,18 @@ are never your in-session helpers (they are started visibly, as your `CLAUDE.md`
 ## CI workflows (kit 1.2.0)
 CI is the quality gate and the biggest wait: **quality first, then speed; every change runs every test, no fail-open path.** Every
 file in `.github/workflows/` follows these rules, and `scripts/workflow-check.sh` (run by `scripts/kit-check.sh`) fails on a breach:
-trigger `pull_request` (never `pull_request_target` or `issue_comment`); top-level `permissions: contents: read`; `actions/checkout`
-with `persist-credentials: false`; every action pinned to a full commit SHA (tag as a comment); no `${{ github.event.* }}` or
-`github.head_ref` in a `run:` step (use `env:`); `concurrency` with `cancel-in-progress: true`. No `paths` filter on a required check:
+trigger `pull_request` (never `pull_request_target`, `workflow_run`, `issue_comment`, `issues` or comment/discussion triggers); top-level `permissions: contents: read`; `actions/checkout`
+with `persist-credentials: false`; every action pinned to a full commit SHA (tag as a comment); no `${{ }}` in a `run:` or
+`script:` value except env/secrets/matrix/runner and github.sha/run_id/repository (anything else goes through `env:`); `concurrency` with `cancel-in-progress: true`. No `paths` filter on a required check:
 a docs-only skip is a first step that decides by code and makes the later steps conditional. Secrets, signing, releases and deploys
 never run on the shared self-hosted boxes (GitHub-hosted, or the project's own runner). Before and after a CI change, ask infra for a
 `ci-performance` run; speed never comes from fewer checks.
+
+## CI tests stay worth their time (kit 1.3.0)
+Every folder with tests is in `.github/test-register.txt` (kind, tier, what it protects: an issue id); every CI test job uploads its
+JUnit report; a PR that fixes a red test says whether the fault was product, test, infra or unknown. A new test names what it
+protects, a bug fix brings a test that would catch it again. Nothing is removed except through the weekly sweep PR. How, and the
+CI worker that reads your own cards: skill `ci-tests`. `scripts/kit-check.sh` fails on an unregistered test folder.
 
 ## Keep the context small
 `CLAUDE.md` stays **under 12 KB** (`scripts/kit-check.sh` warns): rules and a map only. Procedures go into skills,

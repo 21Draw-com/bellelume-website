@@ -1,5 +1,5 @@
 #!/bin/bash
-# builder-kit 1.2.0: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
+# builder-kit 1.3.0: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
 # Stop hook: safety net for uncommitted work at the end of a turn, on a work branch only. It never commits to a branch
 # and never touches the default branch: it stores a snapshot as refs/autosave/<branch> and pushes that ref, so nothing
 # is lost and branch history stays clean. Replaces the old autocommit (add -A on main + push).

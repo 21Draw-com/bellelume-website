@@ -1,5 +1,5 @@
 #!/bin/bash
-# builder-kit 1.2.0: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
+# builder-kit 1.3.0: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
 # A task from infra or the owner arrives as a channel brief; this turns it into the builder's OWN issue, the only kind
 # `job-session.sh start` runs (the login renco-og is shared, so an issue it opens is never trusted).
 #   scripts/brief-issue.sh <brief file name>     e.g. 2026-11-26-0900-infra-control-task-foo.md

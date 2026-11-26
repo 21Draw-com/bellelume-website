@@ -1,5 +1,5 @@
 #!/bin/bash
-# builder-kit 1.2.0: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
+# builder-kit 1.3.0: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
 # The kit contract: every kit file in this repository is byte for byte the version infra shipped. Run in CI and before
 # every pull request: scripts/kit-check.sh [repo dir]   (no network, read-only; exit 0 = holds, 1 = a finding, each printed)
 # Infra's merge check runs ITS OWN copy with its own manifest against the PR head (the repo's copies are editable):
@@ -9,6 +9,7 @@
 # python3 is there (always run with -I: never import from the checked tree) and the hooks are wired in
 # .claude/settings.json; CLAUDE.md imports the builder rules; CODEOWNERS names the four kit paths and has no
 # placeholder left; the PR template has the kit's sections; the old autocommit hook is gone; the CI workflows follow the rules
+# (test-register-check.sh, kit 1.3.0: every test folder in .github/test-register.txt; JUnit upload rule in workflow-check.sh)
 # (workflow-check.sh, kit 1.2.0, AGENT-ARCHITECTURE.md §1.18: its FAIL lines are printed here). Warns (does not fail) when CLAUDE.md is over its size budget.
 self="$(cd "$(dirname "$0")" && pwd)"   # the workflow lint below is this script's sibling, never the checked tree's copy (infra's run)
 manifest="${KIT_MANIFEST:+$(cd "$(dirname "$KIT_MANIFEST")" && pwd)/$(basename "$KIT_MANIFEST")}"
@@ -59,6 +60,8 @@ done
 grep -qE '[{][{]' .github/CODEOWNERS 2>/dev/null && fail ".github/CODEOWNERS: a template placeholder is left (GitHub rejects it); fill in the owner"
 wfout="$(bash "$self/workflow-check.sh" "$root" 2>&1)" || { bad=1; printf '%s\n' "$wfout" | grep '^FAIL' ; }
 printf '%s\n' "$wfout" | grep '^NOTE' || true
+# Kit 1.3.0: the test register covers every test folder (form only here; KIT_REGISTER_ONLINE=1, set by infra's merge check, also checks that every protects id exists).
+tr_out="$(bash "$self/test-register-check.sh" "$root" 2>&1)" || { bad=1; printf '%s\n' "$tr_out" | grep '^FAIL'; }
 size="$(wc -c < CLAUDE.md 2>/dev/null | tr -d ' ')"
 [ "${size:-0}" -le "$budget" ] || echo "WARN CLAUDE.md is $size bytes, over the $budget budget: move procedures into skills, reference into docs/"
 [ "$bad" = 0 ] && echo "kit-check: builder-kit $version holds"
