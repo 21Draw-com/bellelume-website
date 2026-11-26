@@ -1,5 +1,5 @@
 #!/bin/bash
-# builder-kit 1.0.9: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
+# builder-kit 1.2.0: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
 # Visible job sessions for a builder (#147, pattern of #144). Run by the MAIN builder session in its own account; no root.
 # One independent issue = one tmux session + Claude Remote session "<repo>-<N> <short issue title>" in its own git worktree,
 # closed after its PR. A kit file infra ships; the same file in every builder repo.
