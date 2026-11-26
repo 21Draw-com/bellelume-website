@@ -9,3 +9,7 @@ exclude:
   - docs/
   - "*.md"
   - "*.sh"
+  - node_modules/
+  - vendor/
+  - "package*.json"
+  - "Gemfile*"
