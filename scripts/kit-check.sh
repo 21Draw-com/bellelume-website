@@ -1,5 +1,5 @@
 #!/bin/bash
-# builder-kit 1.0.9: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
+# builder-kit 1.2.0: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
 # The kit contract: every kit file in this repository is byte for byte the version infra shipped. Run in CI and before
 # every pull request: scripts/kit-check.sh [repo dir]   (no network, read-only; exit 0 = holds, 1 = a finding, each printed)
 # Infra's merge check runs ITS OWN copy with its own manifest against the PR head (the repo's copies are editable):
@@ -8,7 +8,9 @@
 # Checks: each file in .github/kit.sha256 exists, has its sha256 and carries the version line; scripts are executable;
 # python3 is there (always run with -I: never import from the checked tree) and the hooks are wired in
 # .claude/settings.json; CLAUDE.md imports the builder rules; CODEOWNERS names the four kit paths and has no
-# placeholder left; the PR template has the kit's sections; the old autocommit hook is gone. Warns (does not fail) when CLAUDE.md is over its size budget.
+# placeholder left; the PR template has the kit's sections; the old autocommit hook is gone; the CI workflows follow the rules
+# (workflow-check.sh, kit 1.2.0, AGENT-ARCHITECTURE.md §1.18: its FAIL lines are printed here). Warns (does not fail) when CLAUDE.md is over its size budget.
+self="$(cd "$(dirname "$0")" && pwd)"   # the workflow lint below is this script's sibling, never the checked tree's copy (infra's run)
 manifest="${KIT_MANIFEST:+$(cd "$(dirname "$KIT_MANIFEST")" && pwd)/$(basename "$KIT_MANIFEST")}"
 root="$(git -C "${1:-.}" rev-parse --show-toplevel 2>/dev/null)" || { echo "kit-check: not in a git repository" >&2; exit 1; }
 cd "$root" || exit 1
@@ -38,6 +40,8 @@ except Exception as e: print(f"not valid JSON ({e})"); sys.exit()
 cmds = lambda ev: [k.get("command", "") for e in h.get(ev, []) for k in e.get("hooks", [])]
 if not any(c.endswith("/scripts/ledger.sh hook-start") for c in cmds("SessionStart")): print("SessionStart hook 'scripts/ledger.sh hook-start' not wired")
 if not any(c.endswith("/.claude/hooks/autosave.sh") for c in cmds("Stop")): print("Stop hook '.claude/hooks/autosave.sh' not wired")
+if not any(c.endswith("/.claude/hooks/signal-infra.sh") for c in cmds("Stop")): print("Stop hook '.claude/hooks/signal-infra.sh' not wired (kit 1.1.0)")
+if not any(c.endswith("/.claude/hooks/renco-direct-hint.sh") for c in cmds("UserPromptSubmit")): print("UserPromptSubmit hook '.claude/hooks/renco-direct-hint.sh' not wired (kit 1.1.0)")
 if [c for ev in h for c in cmds(ev) if "autocommit" in c]: print("a hook still runs an autocommit; delete it (autosave.sh replaces it)")
 PY
 )
@@ -53,6 +57,8 @@ for h in "## Checks" "## For infra after the merge" "## Learnings for all agents
 done
 # No literal double brace in this file: the service HOW-TO-START greps a new repo for them and must find none.
 grep -qE '[{][{]' .github/CODEOWNERS 2>/dev/null && fail ".github/CODEOWNERS: a template placeholder is left (GitHub rejects it); fill in the owner"
+wfout="$(bash "$self/workflow-check.sh" "$root" 2>&1)" || { bad=1; printf '%s\n' "$wfout" | grep '^FAIL' ; }
+printf '%s\n' "$wfout" | grep '^NOTE' || true
 size="$(wc -c < CLAUDE.md 2>/dev/null | tr -d ' ')"
 [ "${size:-0}" -le "$budget" ] || echo "WARN CLAUDE.md is $size bytes, over the $budget budget: move procedures into skills, reference into docs/"
 [ "$bad" = 0 ] && echo "kit-check: builder-kit $version holds"

@@ -1,16 +1,14 @@
-# The kit contract as a CI step (builder kit README, Rollout step 3): every kit file equals the shipped version.
+# The kit contract as a CI step (builder kit README, Rollout step 3): every kit file equals the shipped version,
+# and the CI workflows follow the kit's rules (workflow-check.sh, kit 1.2.0).
 name: kit-check
 on:
   pull_request:
-  push:
-    branches: [master]
 permissions:
   contents: read
-# CI load (#46): a newer push to the same PR cancels its older run. A master push gets its own group per commit,
-# so no master run is ever cancelled or replaced while pending (master is live).
+# CI load (#46): a newer push to the same PR cancels its older run.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   kit-check:
     # Deliberately GitHub-hosted, not [self-hosted, ci] (#46): public repo, so a fork PR must never run on infra's machines.
