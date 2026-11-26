@@ -1,0 +1,3 @@
+# Test register (builder kit 1.3.0, skill ci-tests): one line per test folder, checked by scripts/test-register-check.sh.
+# tests/: the kit's shell test of scripts/job-session.sh (bounded gh, issue trust: only this builder's App, saved brief).
+tests  kind=unit  tier=quick  protects=#39
