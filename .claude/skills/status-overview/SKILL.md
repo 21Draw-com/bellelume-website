@@ -2,11 +2,14 @@
 name: status-overview
 description: Writes a builder's one-screen overview for its repository - what each job session does, what can start now, what waits on whom, its own to-dos - ending with one question to Renco. Use when Renco asks for an overview, status or "how is it going", and after a long stretch of work before handing back.
 ---
-<!-- builder-kit 1.0.7 -->
+<!-- builder-kit 1.0.9 -->
 
 # Status overview (one repository)
 
 Same form as infra's overview, scoped to this repository. Cheap: one script run, no subagents, no transcripts, never from memory.
+
+## 0. Priority list first
+The builder's status issue starts with one ordered priority list (builder rules, kit 1.0.8): per item the issue or PR, the next step and who it waits on, replaced each time, never appended. Check it matches this overview and fix it before you write; the overview's order follows it.
 
 ## 1. Gather
 `scripts/ledger.sh overview` prints the plan (merged-not-verified, can start now, waiting on, decisions, open PRs), the running job sessions and the hygiene table. For a job session's detail read its issue or PR, not its conversation.

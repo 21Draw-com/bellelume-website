@@ -1,5 +1,5 @@
 #!/bin/bash
-# builder-kit 1.0.7: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
+# builder-kit 1.0.9: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
 # Stop hook: safety net for uncommitted work at the end of a turn, on a work branch only. It never commits to a branch
 # and never touches the default branch: it stores a snapshot as refs/autosave/<branch> and pushes that ref, so nothing
 # is lost and branch history stays clean. Replaces the old autocommit (add -A on main + push).
@@ -43,11 +43,11 @@ git reset -q "$base" -- "${only[@]}" >/dev/null 2>&1 || exit 0   # a key file (s
 tree="$(git write-tree)" || exit 0
 q="[\"']?"
 secret='-----BEGIN [A-Z ]*PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|sk-ant-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|xox[abprs]-[A-Za-z0-9-]{10,}|sk_live_[A-Za-z0-9]{20,}|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}'
-secret+="|(password|passwd|secret|token|api_?key)[A-Za-z_]*$q[[:space:]]*[:=][[:space:]]*$q[^[:space:]\"'\$<{]{8,}"
+secret+="|(password|passwd|secret|token|api_?key)[A-Za-z_]*${q}[[:space:]]*[:=][[:space:]]*${q}[^[:space:]\"'\$<{]{8,}"
 secret+='|[a-z][a-z0-9+.-]*://[^/:@[:space:]]+:[^/@[:space:]]+@'                                   # scheme://user:pass@host
-secret+="|authorization$q[[:space:]]*[:=][[:space:]]*${q}bearer[[:space:]]+[A-Za-z0-9._~+/=-]{8,}"     # Authorization: Bearer
-secret+="|^\+[[:space:]]*$q[A-Za-z0-9+/_=.-]{32,}$q[[:space:]]*,?[[:space:]]*\$"                        # a bare key on its own line
-secret+="|^\+[[:space:]]*(export[[:space:]]+)?$q[A-Za-z_][A-Za-z0-9_.-]*$q[[:space:]]*[:=][[:space:]]*$q[A-Za-z0-9+/_=.-]{32,}"  # VAR=<key>, "name": "<key>", name: <key>
+secret+="|authorization${q}[[:space:]]*[:=][[:space:]]*${q}bearer[[:space:]]+[A-Za-z0-9._~+/=-]{8,}"     # Authorization: Bearer
+secret+="|^\+[[:space:]]*${q}[A-Za-z0-9+/_=.-]{32,}${q}[[:space:]]*,?[[:space:]]*\$"                        # a bare key on its own line
+secret+="|^\+[[:space:]]*(export[[:space:]]+)?${q}[A-Za-z_][A-Za-z0-9_.-]*${q}[[:space:]]*[:=][[:space:]]*${q}[A-Za-z0-9+/_=.-]{32,}"  # VAR=<key>, "name": "<key>", name: <key>
 suspect=0
 # No external diff or textconv driver (repo or global config) may empty the scan; a failed diff saves nothing (1.0.3).
 diff="$(git diff --cached --no-ext-diff --no-textconv --text --no-color --no-prefix -U0 "$base")" || exit 0
