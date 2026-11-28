@@ -1,5 +1,5 @@
 #!/bin/bash
-# builder-kit 1.2.0: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
+# builder-kit 1.4.0: a kit file. Never edit it here; a change goes to infra, which ships a new kit version.
 # The kit contract: every kit file in this repository is byte for byte the version infra shipped. Run in CI and before
 # every pull request: scripts/kit-check.sh [repo dir]   (no network, read-only; exit 0 = holds, 1 = a finding, each printed)
 # Infra's merge check runs ITS OWN copy with its own manifest against the PR head (the repo's copies are editable):
@@ -9,7 +9,10 @@
 # python3 is there (always run with -I: never import from the checked tree) and the hooks are wired in
 # .claude/settings.json; CLAUDE.md imports the builder rules; CODEOWNERS names the four kit paths and has no
 # placeholder left; the PR template has the kit's sections; the old autocommit hook is gone; the CI workflows follow the rules
-# (workflow-check.sh, kit 1.2.0, AGENT-ARCHITECTURE.md §1.18: its FAIL lines are printed here). Warns (does not fail) when CLAUDE.md is over its size budget.
+# (test-register-check.sh, kit 1.3.0: every test folder in .github/test-register.txt; JUnit upload rule in workflow-check.sh)
+# (workflow-check.sh, kit 1.2.0, AGENT-ARCHITECTURE.md §1.18: its FAIL lines are printed here); kit 1.4.0: portable scripts and tests
+# (portability-check.sh), no old shared log left and no hotspot grows (hotspot-check.sh, needs the base: see that file), the shared-repo option
+# (.github/kit.conf). Warns (does not fail) when CLAUDE.md is over its size budget.
 self="$(cd "$(dirname "$0")" && pwd)"   # the workflow lint below is this script's sibling, never the checked tree's copy (infra's run)
 manifest="${KIT_MANIFEST:+$(cd "$(dirname "$KIT_MANIFEST")" && pwd)/$(basename "$KIT_MANIFEST")}"
 root="$(git -C "${1:-.}" rev-parse --show-toplevel 2>/dev/null)" || { echo "kit-check: not in a git repository" >&2; exit 1; }
@@ -47,19 +50,46 @@ PY
 )
 elif [ ! -f "$s" ]; then fail "$s: missing (merge templates/builder-kit/settings.hooks.json into it)"; fi
 [ -e .claude/hooks/autocommit.sh ] && fail ".claude/hooks/autocommit.sh: the old hook commits on the branch; delete it (autosave.sh replaces it)"
-grep -qE '^@\.claude/builder-rules\.md[[:space:]]*$' CLAUDE.md 2>/dev/null || fail "CLAUDE.md: no line '@.claude/builder-rules.md'"
+# Kit 1.4.0 (infra-control#367, item 14): a shared repository, whose root CLAUDE.md belongs to a running service agent, keeps
+# the import in the builder-only file .claude/builder/CLAUDE.md. Stated in .github/kit.conf as the one line `shared-repo=yes`;
+# nothing else is relaxed, any other line in kit.conf fails, and it is valid only on infra's allowlist (KIT_SHARED_ALLOWLIST).
+rules_md=CLAUDE.md
+if [ -f .github/kit.conf ]; then
+  while IFS= read -r l || [ -n "$l" ]; do
+    case "$l" in ''|'#'*) ;; shared-repo=yes) rules_md=.claude/builder/CLAUDE.md ;; *) fail ".github/kit.conf: unknown line '$(printf '%s' "$l" | tr -cd '[:print:]' | cut -c1-80)' (only 'shared-repo=yes')" ;; esac
+  done < .github/kit.conf
+  if [ "$rules_md" != CLAUDE.md ]; then
+    # Valid only for a repository on infra's allowlist (a file in renco-og/infra-control, one owner/repo per line). Infra's
+    # merge check passes it (KIT_SHARED_ALLOWLIST=<file>, with KIT_STRICT=1); a builder's own run cannot see it and says so.
+    slug="$(git remote get-url origin 2>/dev/null | sed -E 's#^(https://)[^@/]*@#\1#; s#.*github\.com[:/]##; s#\.git$##')"
+    if [ -n "${KIT_SHARED_ALLOWLIST:-}" ]; then
+      if [ ! -f "$KIT_SHARED_ALLOWLIST" ]; then fail "KIT_SHARED_ALLOWLIST=$KIT_SHARED_ALLOWLIST: no such file"
+      elif ! sed 's/#.*//; s/[[:space:]]//g' "$KIT_SHARED_ALLOWLIST" | grep -qxF "${slug:-?}"; then fail ".github/kit.conf: shared-repo=yes, but ${slug:-this repository} is not on infra's shared-repo allowlist"
+      else echo "NOTE shared-repo=yes: ${slug} is on infra's allowlist; the import is checked in $rules_md"; fi
+    elif [ "${KIT_STRICT:-}" = 1 ]; then fail ".github/kit.conf: shared-repo=yes under KIT_STRICT=1 needs KIT_SHARED_ALLOWLIST=<infra's allowlist>"
+    else echo "NOTE shared-repo=yes: valid only on infra's allowlist, which infra's merge check applies (KIT_STRICT); the import is checked in $rules_md"; fi
+  fi
+fi
+[ -f "$rules_md" ] && [ ! -L "$rules_md" ] || fail "$rules_md: missing, or not a regular file (a symlink is refused)"
+imp='@.claude/builder-rules.md'; [ "$rules_md" = CLAUDE.md ] || imp='@../builder-rules.md'   # an @ import is relative to its file
+{ [ -f "$rules_md" ] && [ ! -L "$rules_md" ] && grep -qE "^${imp//./\\.}[[:space:]]*\$" "$rules_md"; } 2>/dev/null || fail "$rules_md: no line '$imp'"
 for p in /CLAUDE.md /.claude/ /.github/ /scripts/; do
   grep -qE "^${p}[[:space:]]+@" .github/CODEOWNERS 2>/dev/null || fail ".github/CODEOWNERS: no owner line for $p"
 done
 t=.github/pull_request_template.md   # not hashed: a repo merges the kit sections into its own template
-for h in "## Checks" "## For infra after the merge" "## Learnings for all agents?"; do
+for h in "## Checks" "## For Renco" "## For infra after the merge" "## Learnings for all agents?"; do
   grep -qxF "$h" "$t" 2>/dev/null || fail "$t: no section '$h' (merge the kit's sections into it)"
 done
 # No literal double brace in this file: the service HOW-TO-START greps a new repo for them and must find none.
 grep -qE '[{][{]' .github/CODEOWNERS 2>/dev/null && fail ".github/CODEOWNERS: a template placeholder is left (GitHub rejects it); fill in the owner"
 wfout="$(bash "$self/workflow-check.sh" "$root" 2>&1)" || { bad=1; printf '%s\n' "$wfout" | grep '^FAIL' ; }
 printf '%s\n' "$wfout" | grep '^NOTE' || true
-size="$(wc -c < CLAUDE.md 2>/dev/null | tr -d ' ')"
-[ "${size:-0}" -le "$budget" ] || echo "WARN CLAUDE.md is $size bytes, over the $budget budget: move procedures into skills, reference into docs/"
+# Kit 1.3.0: the test register covers every test folder (form only here; KIT_REGISTER_ONLINE=1, set by infra's merge check, also checks that every protects id exists).
+tr_out="$(bash "$self/test-register-check.sh" "$root" 2>&1)" || { bad=1; printf '%s\n' "$tr_out" | grep '^FAIL'; }
+# Kit 1.4.0 (infra-control#356/#357/#367 items 4, 12): portable scripts and tests; no old shared log is left, no hotspot grows on this branch.
+pc_out="$(bash "$self/portability-check.sh" "$root" 2>&1)" || { bad=1; printf '%s\n' "$pc_out" | grep '^FAIL'; }
+hs_out="$(bash "$self/hotspot-check.sh" "$root" 2>&1)" || { bad=1; printf '%s\n' "$hs_out" | grep '^FAIL'; }
+size=0; [ -f "$rules_md" ] && [ ! -L "$rules_md" ] && size="$(wc -c < "$rules_md" 2>/dev/null | tr -d ' ')"
+[ "${size:-0}" -le "$budget" ] || echo "WARN $rules_md is $size bytes, over the $budget budget: move procedures into skills, reference into docs/"
 [ "$bad" = 0 ] && echo "kit-check: builder-kit $version holds"
 exit "$bad"

@@ -5,10 +5,10 @@ on:
   pull_request:
 permissions:
   contents: read
-# CI load (#46): a newer push to the same PR cancels its older run.
+# CI load (#46): a newer push to the same PR cancels its older run; a default-branch run is never cancelled (kit 1.4.0, skill ci-tests).
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   kit-check:
     # Deliberately GitHub-hosted, not [self-hosted, ci] (#46): public repo, so a fork PR must never run on infra's machines.
@@ -17,4 +17,5 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
+          fetch-depth: 2 # hotspot-check (kit 1.4.0) compares the PR with its base
       - run: scripts/kit-check.sh
